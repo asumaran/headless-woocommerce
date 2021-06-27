@@ -25,7 +25,7 @@ export const useCheckout = () => {
 						...shipping_address,
 					},
 					payment_data: stripe,
-					payment_method: 'basic-stripe',
+					payment_method: 'stripe',
 				} );
 				return data;
 			} catch ( e ) {

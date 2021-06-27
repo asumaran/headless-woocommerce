@@ -7,7 +7,6 @@ import {
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { axios, Emitter } from '../../utils';
-import { useQueryClient } from 'react-query';
 
 const promise = loadStripe( process.env.NEXT_PUBLIC_STRIPE_PUBLIC );
 
@@ -24,12 +23,6 @@ const Stripe = () => {
 	const [ error, setError ] = useState( null );
 	const [ processing, setProcessing ] = useState( '' );
 	const [ disabled, setDisabled ] = useState( true );
-	const queryClient = useQueryClient();
-	const [ clientSecret, setClientSecret ] = useState( () => {
-		return queryClient.getQueryData( 'checkout' ).extensions[
-			'basic-stripe'
-		]?.client_secret;
-	} );
 	const stripe = useStripe();
 	const elements = useElements();
 
@@ -37,21 +30,23 @@ const Stripe = () => {
 		const payStripe = async () => {
 			try {
 				const {
-					paymentIntent,
+					source,
 					error,
-				} = await stripe.confirmCardPayment( clientSecret, {
-					payment_method: {
-						card: elements.getElement( CardElement ),
-					},
-				} );
+				} = await stripe.createSource(
+					elements.getElement( CardElement ),
+					{
+						type: 'card',
+					}
+				);
+
 				if ( error ) {
 					throw Error( error.message );
 					setError( `Payment failed ${ error.message }` );
 					return null;
 				}
 				return [
-					{ key: 'stripe_source', value: paymentIntent.id },
-					{ key: 'paymentMethod', value: 'basic-stripe' },
+					{ key: 'stripe_source', value: source.id },
+					{ key: 'paymentMethod', value: 'stripe' },
 					{ key: 'paymentRequestType', value: 'cc' },
 					{ key: 'wc-stripe-new-payment-method', value: false },
 				];
@@ -66,7 +61,7 @@ const Stripe = () => {
 		}
 
 		return () => Emitter.off( 'submit', payStripe );
-	}, [ stripe, elements, clientSecret ] );
+	}, [ stripe, elements ] );
 	const handleChange = async ( event ) => {
 		// Listen for changes in the CardElement
 		// and display any errors as the customer types their card details
