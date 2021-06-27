@@ -95,6 +95,12 @@ const WCPay = () => {
 			id="card-element"
 			onChange={ handleChange }
 			hidePostalCode={ false }
+			className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm"
+			options={ {
+				classes: {
+					focus: 'outline-none ring-1 ring-purple-500 border-purple-500',
+				},
+			} }
 		/>
 	);
 };
