@@ -54,13 +54,39 @@ const Stripe = () => {
 				console.log( e );
 			}
 		};
+
+		const authStripe = async ( response ) => {
+			const {
+				payment_intent_secret,
+				setup_intent_secret,
+				verification_endpoint,
+			} = response.payment_result.payment_details.reduce( ( details, { key, value } ) => ( { ...details, [ key ]: value } ) );
+
+			const intentSecret = payment_intent_secret || setup_intent_secret;
+			if ( intentSecret ) {
+				const confirmationMethod = setup_intent_secret ? 'confirmCardSetup' : 'confirmCardPayment';
+				await stripe[ confirmationMethod ]( intentSecret );
+
+				try {
+					await axios.get( verification_endpoint );
+				} catch ( e ) {
+					// Swallow CORS error on HTTP redirect.
+					console.log( e );
+				}
+			}
+		};
+
 		try {
 			Emitter.on( 'submit', payStripe );
+			Emitter.on( 'authenticate', authStripe );
 		} catch ( e ) {
 			console.log( e );
 		}
 
-		return () => Emitter.off( 'submit', payStripe );
+		return () => {
+			Emitter.off( 'submit', payStripe );
+			Emitter.off( 'authenticate', authStripe );
+		};
 	}, [ stripe, elements ] );
 	const handleChange = async ( event ) => {
 		// Listen for changes in the CardElement

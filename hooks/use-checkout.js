@@ -33,7 +33,8 @@ export const useCheckout = () => {
 			}
 		},
 		{
-			onSuccess: ( response ) => {
+			onSuccess: async ( response ) => {
+				await Emitter.emit( 'authenticate', response );
 				queryClient.setQueryData( 'checkout', response );
 				queryClient.removeQueries( 'cart' );
 			},
