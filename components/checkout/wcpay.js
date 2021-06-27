@@ -8,17 +8,19 @@ import {
 import { loadStripe } from '@stripe/stripe-js';
 import { axios, Emitter } from '../../utils';
 
-const promise = loadStripe( process.env.NEXT_PUBLIC_STRIPE_PUBLIC );
+const promise = loadStripe( process.env.NEXT_PUBLIC_WCPAY_PUBLIC_KEY, {
+	stripeAccount: process.env.NEXT_PUBLIC_WCPAY_STRIPE_ACCOUNT,
+} );
 
 export default function StripeWrapper() {
 	return (
 		<Elements stripe={ promise }>
-			<Stripe />
+			<WCPay />
 		</Elements>
 	);
 }
 
-const Stripe = () => {
+const WCPay = () => {
 	const [ succeeded, setSucceeded ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ processing, setProcessing ] = useState( '' );
@@ -27,65 +29,58 @@ const Stripe = () => {
 	const elements = useElements();
 
 	useEffect( () => {
-		const payStripe = async () => {
+		const payWCPay = async () => {
 			try {
 				const {
-					source,
+					paymentMethod,
 					error,
-				} = await stripe.createSource(
-					elements.getElement( CardElement ),
-					{
-						type: 'card',
-					}
-				);
-
+				} = await stripe.createPaymentMethod( {
+					type: 'card',
+					card: elements.getElement( CardElement ),
+				} );
 				if ( error ) {
 					throw Error( error.message );
 					setError( `Payment failed ${ error.message }` );
 					return null;
 				}
 				return [
-					{ key: 'stripe_source', value: source.id },
-					{ key: 'paymentMethod', value: 'stripe' },
-					{ key: 'paymentRequestType', value: 'cc' },
-					{ key: 'wc-stripe-new-payment-method', value: false },
+					{ key: 'wcpay-payment-method', value: paymentMethod.id },
+					{ key: 'paymentMethod', value: 'woocommerce_payments' },
 				];
 			} catch ( e ) {
 				console.log( e );
 			}
 		};
 
-		const authStripe = async ( response ) => {
-			const {
-				payment_intent_secret,
-				setup_intent_secret,
-				verification_endpoint,
-			} = response.payment_result.payment_details.reduce( ( details, { key, value } ) => ( { ...details, [ key ]: value } ) );
+		const authWCPay = async ( response ) => {
+			const paymentDetails = response.payment_result.payment_details.reduce( ( details, { key, value } ) => ( { ...details, [ key ]: value } ) );
+			const partials = paymentDetails.redirect.match( /#wcpay-confirm-(pi|si):(.+):(.+):(.+)$/ );
 
-			const intentSecret = payment_intent_secret || setup_intent_secret;
-			if ( intentSecret ) {
-				const confirmationMethod = setup_intent_secret ? 'confirmCardSetup' : 'confirmCardPayment';
-				await stripe[ confirmationMethod ]( intentSecret );
+			if ( partials ) {
+				const thingToConfirm = 'si' === partials[ 1 ] ? 'Setup' : 'Payment';
+				const result = await stripe[ 'confirmCard' + thingToConfirm ]( partials[ 3 ] );
 
-				try {
-					await axios.get( verification_endpoint );
-				} catch ( e ) {
-					// Swallow CORS error on HTTP redirect.
-					console.log( e );
-				}
+				const formData = new FormData();
+				formData.append( 'action', 'update_order_status' );
+				formData.append( '_ajax_nonce', partials[ 4 ] );
+				formData.append( 'order_id', partials[ 2 ] );
+				formData.append( 'intent_id', result.paymentIntent?.id || result.setupIntent?.id );
+
+				const ajaxUrl = process.env.NEXT_PUBLIC_STORE_API.replace( '/wp-json/wc/store', '/wp-admin/admin-ajax.php' );
+				await axios.post( ajaxUrl, formData );
 			}
 		};
 
 		try {
-			Emitter.on( 'submit', payStripe );
-			Emitter.on( 'authenticate', authStripe );
+			Emitter.on( 'submit', payWCPay );
+			Emitter.on( 'authenticate', authWCPay );
 		} catch ( e ) {
 			console.log( e );
 		}
 
 		return () => {
-			Emitter.off( 'submit', payStripe );
-			Emitter.off( 'authenticate', authStripe );
+			Emitter.off( 'submit', payWCPay );
+			Emitter.off( 'authenticate', authWCPay );
 		};
 	}, [ stripe, elements ] );
 	const handleChange = async ( event ) => {

@@ -2,7 +2,7 @@
 
 This repo contains a demo for a detached WooCommerce store, using Store API, which is under-development and is included for free with WooCommerce and WooCommerce Blocks plugins.
 
-WooCommerce Stripe Gateway is required to be configured.
+WooCommerce Payments is required to be configured.
 
 ## Limitations
 

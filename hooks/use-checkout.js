@@ -15,7 +15,7 @@ export const useCheckout = () => {
 	const { mutateAsync: placeOrder, error: placeErrors } = useMutation(
 		async ( { values: { billing_address, shipping_address } } ) => {
 			try {
-				const [ stripe ] = await Emitter.emit( 'submit' );
+				const [ wcpay ] = await Emitter.emit( 'submit' );
 				const { data } = await axios.post( 'checkout', {
 					billing_address: {
 						...billing_address,
@@ -24,8 +24,8 @@ export const useCheckout = () => {
 					shipping_address: {
 						...shipping_address,
 					},
-					payment_data: stripe,
-					payment_method: 'stripe',
+					payment_data: wcpay,
+					payment_method: 'woocommerce_payments',
 				} );
 				return data;
 			} catch ( e ) {

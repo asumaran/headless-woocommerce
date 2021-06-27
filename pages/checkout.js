@@ -7,7 +7,7 @@ import { axios } from '../utils';
 import classnames from 'classnames';
 
 import ShippingMethods from '../components/checkout/shipping-methods';
-import Stripe from '../components/checkout/stripe';
+import WCPay from '../components/checkout/wcpay';
 import { useCart, useCheckout } from '../hooks';
 import * as Yup from 'yup';
 import { useRouter } from 'next/router';
@@ -777,7 +777,7 @@ export default function Checkout() {
 										</h3>
 									</div>
 
-									<Stripe />
+									<WCPay />
 								</div>
 							) }
 							{ /* End step */ }
