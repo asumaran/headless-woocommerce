@@ -34,10 +34,8 @@ export const useCheckout = () => {
 		},
 		{
 			onSuccess: ( response ) => {
-				if ( response.data ) {
-					queryClient.setQueryData( 'checkout', response.data );
-					queryClient.removeQueries( 'cart' );
-				}
+				queryClient.setQueryData( 'checkout', response );
+				queryClient.removeQueries( 'cart' );
 			},
 		}
 	);
