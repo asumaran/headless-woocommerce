@@ -18,14 +18,14 @@ export default function Home() {
 					key={ product.id }
 					className="relative"
 				>
-					<Link href={ `/product/${ product.slug }` } passHref>
+					<Link href={ `/product/${ product.id }` } passHref>
 						<Product.Image
 							as="a"
 							className="group block w-full aspect-w-10 aspect-h-7 rounded-lg bg-gray-100 overflow-hidden"
 						/>
 					</Link>
 					<div className="flex justify-between items-end">
-						<Link href={ `/product/${ product.slug }` }>
+						<Link href={ `/product/${ product.id }` }>
 							<Product.Title
 								as="a"
 								className="mt-2 block text-sm font-medium text-gray-900 truncate"
@@ -39,7 +39,7 @@ export default function Home() {
 						onClick={ ( onClick ) =>
 							product.type === 'simple'
 								? onClick().then( () => setCartIsOpen( true ) )
-								: push( `/product/${ product.slug }` )
+								: push( `/product/${ product.id }` )
 						}
 					/>
 				</Product>

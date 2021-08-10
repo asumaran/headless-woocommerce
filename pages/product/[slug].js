@@ -80,7 +80,7 @@ export async function getStaticPaths() {
 
 	return {
 		paths: products.map( ( product ) => ( {
-			params: { slug: product.slug },
+			params: { slug: `${product.id}` },
 		} ) ),
 		fallback: 'blocking', // See the "fallback" section below
 	};

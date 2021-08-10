@@ -25,7 +25,7 @@ export const useCheckout = () => {
 						...shipping_address,
 					},
 					payment_data: wcpay,
-					payment_method: 'woocommerce_payments',
+					payment_method: 'stripe',
 				} );
 				return data;
 			} catch ( e ) {
